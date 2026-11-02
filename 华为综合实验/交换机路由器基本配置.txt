@@ -1,0 +1,80 @@
+在接入层交换机access端口做
+
+port-security enable //开启端口安全；
+
+port-security max-mac-num 1 //接口学习的安全MAC地址限制数量为1，就是一个接口只允许一个设备的意思；
+
+port-security mac-address sticky //开启接口Sticky MAC功能；
+
+port-security protect-action shutdown //发现非法接入设备，直接关闭端口，并上报告警。
+
+telnet设置
+<SW1>sy
+Enter system view, return user view with Ctrl+Z.
+[SW1]vlan 999
+[SWx-vlan999]int vlanif 999
+[SWx-Vlanif999]ip add 192.168.255.1 255.255.255.0   //1.创vlan加地址
+[SWx-Vlanif999]quit
+[SW1]aaa       	
+[SWx-aaa]local-user admin password cipher admin@123 privilege level 15
+Info: Add a new user.	
+[SWx-aaa]local-user admin service-type telnet	//创账号选服务
+[SWx-aaa]quit
+[SWx]user-interface vty 0 4	
+[SWx-ui-vty0-4]authentication-mode aaa    //账号容量和认证
+[SWx-ui-vty0-4]
+
+ssh设置stelnet
+<SW1>sy
+Enter system view, return user view with Ctrl+Z.
+[SW1]vlan 999
+[SW1-vlan999]int vlanif 999
+[SW1-Vlanif999]ip add 192.168.255.1 255.255.255.0   //1.创vlan加地址
+[SW1-Vlanif999]quit
+[SW1]rsa local-key-pair create //创建密钥，默认512，2048更安全
+[SW1]ssh client first-time enable //启用ssh服务
+[SW1]stelnet server enable
+[SW1]ssh user admin service-type stelnet //创建ssh用户
+[SW1]ssh user admin authentication-type password
+[SW1]aaa //创建用户
+[SW1-aaa]local-user admin password cipher admin@123 privilege level 15
+[SW1-aaa]local-user admin service-type ssh
+[SW1-aaa]quit
+[SW4]user-interface vty 0 4 //配置vty界面支持的登录协议
+[SW4-ui-vty0-4]authencication-mode aaa
+[SW4-ui-vty0-4]protocol inbound ssh
+[SW4-ui-vty0-4]user privilege level 15
+
+dhcp配置
+[SW1]dhcp enable
+[SW1]ip pool vlan_10
+[SW1-ip-pool-vlan_10]network 192.168.10.0 mask 24
+[SW1-ip-pool-vlan_10]gateway-list 192.168.10.1
+[SW1-ip-pool-vlan_10]dns-list 8.8.8.8
+[SW1]int vlanif 10
+[SW1-Vlanif10]dhcp select global
+
+时钟设置
+clock timezone BJ add 8:00
+clock datetime 16:00:24 2020-02-23
+
+OSPF设置
+[R1]ospf 1
+[R1]area 0
+[R1]network 192.168.254.0 0.0.0.255 //配上当前子网
+[R1]network 192.168.253.0 0.0.0.255
+
+配置LACP模式链路聚合
+<HUAWEI> system-view
+[HUAWEI] interface eth-trunk 1                  //创建Eth-Trunk接口
+[HUAWEI-Eth-Trunk1] mode lacp                   //配置Eth-Trunk的工作模式为LACP模式
+[HUAWEI-Eth-Trunk1] quit
+[HUAWEI] interface gigabitethernet 1/0/0        //将接口加入到指定Eth-Trunk中
+[HUAWEI-GigabitEthernet1/0/0] eth-trunk 1
+[HUAWEI-GigabitEthernet1/0/0] quit
+[HUAWEI] interface gigabitethernet 1/0/1       //将接口加入到指定Eth-Trunk中
+[HUAWEI-GigabitEthernet1/0/1] eth-trunk 1
+[HUAWEI-GigabitEthernet1/0/1] quit
+
+查看mac地址表
+dis mac-address
